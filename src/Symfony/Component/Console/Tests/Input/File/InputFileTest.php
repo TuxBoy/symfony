@@ -82,6 +82,48 @@ class InputFileTest extends TestCase
         }
     }
 
+    public function testFromPathWithFileUriAndEncodedBackslashes()
+    {
+        if ('\\' === \DIRECTORY_SEPARATOR) {
+            $this->markTestSkipped('Test only applicable on POSIX systems.');
+        }
+
+        $path = $this->tempDir.'/a\\b.txt';
+        file_put_contents($path, 'right');
+
+        file_put_contents($this->tempDir.'/ab.txt', 'wrong');
+
+        $uri = 'file://'.$this->tempDir.'/a%5Cb.txt';
+
+        $file = InputFile::fromPath($uri);
+
+        $this->assertSame($path, $file->getPathname());
+        $this->assertSame('right', $file->getContents());
+    }
+
+    public function testFromPathWithFileUriAndLiteralEncodedBackslashSequence()
+    {
+        if ('\\' === \DIRECTORY_SEPARATOR) {
+            $this->markTestSkipped('Test only applicable on POSIX systems.');
+        }
+
+        $path = $this->tempDir.'/%5C.txt';
+        file_put_contents($path, 'right');
+
+        $uri = 'file://'.$this->tempDir.'/%255C.txt';
+
+        $file = InputFile::fromPath($uri);
+
+        $this->assertSame('right', $file->getContents());
+    }
+
+    public function testFromPathWithFileUriAndRemoteHost()
+    {
+        $this->expectException(InvalidFileException::class);
+
+        InputFile::fromPath('file://otherhost/f.txt');
+    }
+
     public function testFromDataRestoresUmaskOnFailure()
     {
         if ('\\' === \DIRECTORY_SEPARATOR) {

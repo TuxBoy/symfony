@@ -109,6 +109,13 @@ final class InputFile extends \SplFileInfo
 
             if (preg_match('#^localhost/#i', $path)) {
                 $path = substr($path, 9);
+            } elseif (!str_starts_with($path, '/')) {
+                throw new InvalidFileException(sprintf('Unsupported file URI host in "%s".', $path));
+            }
+
+            // Remove backslash escapes before decoding percent-encoded bytes.
+            if ('\\' !== \DIRECTORY_SEPARATOR) {
+                $path = preg_replace('/\\\\(.)/', '$1', $path) ?? $path;
             }
 
             // "+" is a valid path character, so only decode percent-encoded bytes.
@@ -117,10 +124,8 @@ final class InputFile extends \SplFileInfo
             if ('\\' === \DIRECTORY_SEPARATOR && preg_match('#^/[a-zA-Z]:/#', $path)) {
                 $path = substr($path, 1);
             }
-        }
-
-        // Remove backslash escapes (e.g., "\ " for escaped spaces) on non-Windows systems
-        if ('\\' !== \DIRECTORY_SEPARATOR) {
+        } elseif ('\\' !== \DIRECTORY_SEPARATOR) {
+            // Remove backslash escapes (e.g., "\ " for escaped spaces).
             $path = preg_replace('/\\\\(.)/', '$1', $path) ?? $path;
         }
 
